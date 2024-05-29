@@ -12,7 +12,11 @@ const PORT = process.env.PORT || 5000;
 const SECRET_KEY = "your_secret_key";
 
 app.use(bodyParser.json());
-app.use(cors());
+app.use(cors({
+  origin: "http://localhost:5173",
+  methods: ["GET", "POST"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+}));
 
 const uri =
   "mongodb+srv://moiz:Syedmoiz1@cluster0.qukix6m.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
