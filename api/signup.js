@@ -1,5 +1,7 @@
-const connectToDatabase = require("./mongodb");
+const express = require("express");
 const bcrypt = require("bcryptjs");
+const { connectToDatabase } = require("./mongodb");
+const router = express.Router();
 
 class User {
   constructor(email, password) {
@@ -7,16 +9,24 @@ class User {
     this.password = password;
   }
 }
-module.exports = async (req, res) => {
-  if (req.method === "POST") {
-    const { email, password } = req.body;
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const user = new User(email, hashedPassword);
 
+router.post("/signup", async (req, res) => {
+  const { email, password } = req.body;
+  if (!email || !password) {
+    return res.status(400).json({ message: "Email and password are required" });
+  }
+
+  const hashedPassword = await bcrypt.hash(password, 10);
+  const user = new User(email, hashedPassword);
+
+  try {
     const db = await connectToDatabase();
     await db.collection("users").insertOne(user);
     res.status(200).json({ message: "Sign up successful" });
-  } else {
-    res.status(405).json({ message: "Method not allowed" });
+  } catch (error) {
+    console.error("Error inserting user into database:", error);
+    res.status(500).json({ message: "Internal server error" });
   }
-};
+});
+
+module.exports = router;
