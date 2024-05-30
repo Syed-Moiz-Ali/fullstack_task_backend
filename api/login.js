@@ -2,7 +2,7 @@ const connectToDatabase = require("./mongodb");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
-const SECRET_KEY = process.env.SECRET_KEY;
+const SECRET_KEY = 'screate_key';
 
 module.exports = async (req, res) => {
   if (req.method === "POST") {
