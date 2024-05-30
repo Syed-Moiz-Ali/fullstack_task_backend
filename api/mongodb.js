@@ -1,17 +1,17 @@
-const mongoose = require("mongoose");
+const { MongoClient } = require("mongodb");
 
 const uri =
-  "mongodb+srv://moiz:Syedmoiz1@cluster0.qukix6m.mongodb.net/myDatabase?retryWrites=true&w=majority";
+  "mongodb+srv://moiz:Syedmoiz1@cluster0.qukix6m.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
+const client = new MongoClient(uri);
+
+let db;
 
 async function connectToDatabase() {
-  if (mongoose.connection.readyState === 0) {
-    await mongoose.connect(uri, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-      dbName: "myDatabase",
-    });
+  if (!db) {
+    await client.connect();
+    db = client.db("myDatabase");
   }
-  return mongoose.connection;
+  return db;
 }
 
-module.exports = connectToDatabase;
+module.exports = { connectToDatabase };
