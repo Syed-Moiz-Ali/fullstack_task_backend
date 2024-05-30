@@ -1,13 +1,18 @@
-const connectToDatabase = require("./mongodb");
+const express = require("express");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const { connectToDatabase } = require("./mongodb");
+const router = express.Router();
 
-const SECRET_KEY = 'screate_key';
+const SECRET_KEY = "your_secret_key";
 
-module.exports = async (req, res) => {
-  if (req.method === "POST") {
-    const { email, password } = req.body;
+router.post("/login", async (req, res) => {
+  const { email, password } = req.body;
+  if (!email || !password) {
+    return res.status(400).json({ message: "Email and password are required" });
+  }
 
+  try {
     const db = await connectToDatabase();
     const user = await db.collection("users").findOne({ email });
 
@@ -19,7 +24,10 @@ module.exports = async (req, res) => {
     } else {
       res.status(401).json({ message: "Invalid credentials" });
     }
-  } else {
-    res.status(405).json({ message: "Method not allowed" });
+  } catch (error) {
+    console.error("Error during login:", error);
+    res.status(500).json({ message: "Internal server error" });
   }
-};
+});
+
+module.exports = router;
