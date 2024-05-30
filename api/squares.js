@@ -1,7 +1,9 @@
-const connectToDatabase = require("./mongodb");
+const express = require("express");
 const jwt = require("jsonwebtoken");
+const { connectToDatabase } = require("./mongodb");
+const router = express.Router();
 
-const SECRET_KEY = process.env.SECRET_KEY;
+const SECRET_KEY = "your_secret_key";
 
 class SquareState {
   constructor(squares) {
@@ -24,29 +26,36 @@ const authenticateJWT = (req, res, next) => {
   }
 };
 
-module.exports = async (req, res) => {
-  const db = await connectToDatabase();
-
-  if (req.method === "GET") {
-    authenticateJWT(req, res, async () => {
-      const state = await db.collection("squareStates").findOne({});
-      res.status(200).json(state ? state.squares : []);
-    });
-  } else if (req.method === "POST") {
-    authenticateJWT(req, res, async () => {
-      const { squares } = req.body;
-      let state = await db.collection("squareStates").findOne({});
-      if (!state) {
-        state = new SquareState(squares);
-        await db.collection("squareStates").insertOne(state);
-      } else {
-        await db
-          .collection("squareStates")
-          .updateOne({ _id: state._id }, { $set: { squares: squares } });
-      }
-      res.status(200).json({ message: "State updated successfully" });
-    });
-  } else {
-    res.status(405).json({ message: "Method not allowed" });
+router.get("/squares", authenticateJWT, async (req, res) => {
+  try {
+    const db = await connectToDatabase();
+    const state = await db.collection("squareStates").findOne({});
+    res.status(200).json(state ? state.squares : []);
+  } catch (error) {
+    console.error("Error fetching squares:", error);
+    res.status(500).json({ message: "Internal server error" });
   }
-};
+});
+
+router.post("/squares", authenticateJWT, async (req, res) => {
+  const { squares } = req.body;
+  try {
+    const db = await connectToDatabase();
+    let state = await db.collection("squareStates").findOne({});
+
+    if (!state) {
+      state = new SquareState(squares);
+      await db.collection("squareStates").insertOne(state);
+    } else {
+      await db
+        .collection("squareStates")
+        .updateOne({ _id: state._id }, { $set: { squares } });
+    }
+    res.status(200).json({ message: "State updated successfully" });
+  } catch (error) {
+    console.error("Error updating squares:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+module.exports = router;
